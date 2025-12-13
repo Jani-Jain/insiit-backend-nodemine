@@ -727,5 +727,88 @@ router.post("/mess-menu/update-from-excel", checkApiKey, async (req, res) => {
   }
 });
 
+/* cabsharing feature */
+const CabRide = require("./cabmodel");
+
+/* GET all rides */
+router.get("/cab", async (req, res) => {
+  const rides = await CabRide.find().sort({ createdAt: -1 });
+  res.json(rides);
+});
+
+/* GET my rides */
+router.get("/cab/user/:email", async (req, res) => {
+  const email = req.params.email;
+  const rides = await CabRide.find({
+    $or: [{ creatorEmail: email }, { riders: email }],
+  });
+  res.json(rides);
+});
+
+/* CREATE ride */
+router.post("/cab", async (req, res) => {
+  const ride = new CabRide({
+    ...req.body,
+    availableSeats: req.body.totalSeats,
+    riders: [],
+  });
+  await ride.save();
+  res.status(201).json(ride);
+});
+
+/* JOIN ride */
+router.put("/cab/:id/join", async (req, res) => {
+  const { email } = req.body;
+  const ride = await CabRide.findById(req.params.id);
+
+  if (!ride || ride.isClosed || ride.availableSeats <= 0)
+    return res.status(400).json({ error: "Cannot join ride" });
+
+  if (!ride.riders.includes(email)) {
+    ride.riders.push(email);
+    ride.availableSeats--;
+  }
+
+  await ride.save();
+  res.json(ride);
+});
+
+/* LEAVE ride */
+router.put("/cab/:id/leave", async (req, res) => {
+  const { email } = req.body;
+  const ride = await CabRide.findById(req.params.id);
+
+  ride.riders = ride.riders.filter(e => e !== email);
+  ride.availableSeats++;
+
+  await ride.save();
+  res.json(ride);
+});
+
+/* CLOSE ride (creator only) */
+router.put("/cab/:id/close", async (req, res) => {
+  const { email } = req.body;
+  const ride = await CabRide.findById(req.params.id);
+
+  if (ride.creatorEmail !== email)
+    return res.status(403).json({ error: "Not allowed" });
+
+  ride.isClosed = true;
+  await ride.save();
+  res.json(ride);
+});
+
+/* DELETE ride (creator only) */
+router.delete("/cab/:id", async (req, res) => {
+  const { email } = req.body;
+  const ride = await CabRide.findById(req.params.id);
+
+  if (ride.creatorEmail !== email)
+    return res.status(403).json({ error: "Not allowed" });
+
+  await ride.deleteOne();
+  res.json({ message: "Ride deleted" });
+});
+
 
 module.exports = router;
