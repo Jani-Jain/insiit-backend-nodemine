@@ -12,6 +12,7 @@ const fcmStore = require('./fcmModel');
 const db = require('./firebaseConfig');
 const router = express.Router();
 const LostFoundItem = require('./lostfoundmodel');
+const CabRide = require("./cabsharing");
 
 const checkApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
@@ -728,53 +729,84 @@ router.post("/mess-menu/update-from-excel", checkApiKey, async (req, res) => {
 });
 
 /* cabsharing feature */
-const CabRide = require("./cabmodel");
+const express = require("express");
 
-/* GET all rides */
-router.get("/cab", async (req, res) => {
-  const rides = await CabRide.find().sort({ createdAt: -1 });
+
+/* GET all visible rides (hide after 30 min) */
+router.get("/", async (req, res) => {
+  const now = new Date();
+  const visibleAfter = new Date(now.getTime() - 30 * 60 * 1000);
+
+  const rides = await CabRide.find({
+    rideDateTime: { $gte: visibleAfter },
+  }).sort({ rideDateTime: 1 });
+
   res.json(rides);
 });
 
-/* GET my rides */
-router.get("/cab/user/:email", async (req, res) => {
+/* GET user rides */
+router.get("/user/:email", async (req, res) => {
   const email = req.params.email;
+
   const rides = await CabRide.find({
     $or: [{ creatorEmail: email }, { riders: email }],
   });
+
   res.json(rides);
 });
 
 /* CREATE ride */
-router.post("/cab", async (req, res) => {
+router.post("/", async (req, res) => {
   const ride = new CabRide({
     ...req.body,
     availableSeats: req.body.totalSeats,
     riders: [],
   });
+
   await ride.save();
   res.status(201).json(ride);
 });
 
-/* JOIN ride */
+/* join ride*/
 router.put("/cab/:id/join", async (req, res) => {
-  const { email } = req.body;
-  const ride = await CabRide.findById(req.params.id);
+  try {
+    const { email } = req.body;
+    const ride = await CabRide.findById(req.params.id);
 
-  if (!ride || ride.isClosed || ride.availableSeats <= 0)
-    return res.status(400).json({ error: "Cannot join ride" });
+    if (!ride) return res.status(404).json({ error: "Ride not found" });
+    if (ride.isClosed) return res.status(400).json({ error: "Ride closed" });
+    if (ride.availableSeats <= 0)
+      return res.status(400).json({ error: "No seats available" });
+    if (ride.riders.includes(email))
+      return res.status(400).json({ error: "Already joined" });
 
-  if (!ride.riders.includes(email)) {
     ride.riders.push(email);
     ride.availableSeats--;
-  }
+    await ride.save();
 
-  await ride.save();
-  res.json(ride);
+    // 🔔 Notify creator
+    const tokens = await fcmStore.find({ email: ride.creatorEmail });
+
+    for (const t of tokens) {
+      await admin.messaging().send({
+        token: t.fcmToken,
+        notification: {
+          title: "New Cab Join",
+          body: `${email} joined your cab from ${ride.from} to ${ride.to}`,
+        },
+      });
+    }
+
+    res.json(ride);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
+
 /* LEAVE ride */
-router.put("/cab/:id/leave", async (req, res) => {
+router.put("/:id/leave", async (req, res) => {
   const { email } = req.body;
   const ride = await CabRide.findById(req.params.id);
 
@@ -785,8 +817,8 @@ router.put("/cab/:id/leave", async (req, res) => {
   res.json(ride);
 });
 
-/* CLOSE ride (creator only) */
-router.put("/cab/:id/close", async (req, res) => {
+/* CLOSE ride*/
+router.put("/:id/close", async (req, res) => {
   const { email } = req.body;
   const ride = await CabRide.findById(req.params.id);
 
@@ -795,10 +827,11 @@ router.put("/cab/:id/close", async (req, res) => {
 
   ride.isClosed = true;
   await ride.save();
+
   res.json(ride);
 });
 
-/* DELETE ride (creator only) */
+/* DELETE rid) */
 router.delete("/cab/:id", async (req, res) => {
   const { email } = req.body;
   const ride = await CabRide.findById(req.params.id);
@@ -809,6 +842,5 @@ router.delete("/cab/:id", async (req, res) => {
   await ride.deleteOne();
   res.json({ message: "Ride deleted" });
 });
-
 
 module.exports = router;
