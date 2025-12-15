@@ -728,6 +728,22 @@ router.post("/mess-menu/update-from-excel", checkApiKey, async (req, res) => {
   }
 });
 
+const FoundItemDay = require("./models/foundItemDay");
+
+// Get last 7 days for UI
+router.get("/found-items", async (req, res) => {
+  try {
+    const items = await FoundItemDay.find()
+      .sort({ date: -1 })
+      .limit(7);
+
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch found items" });
+  }
+});
+
+
 /* cabsharing feature */
 const express = require("express");
 
@@ -842,5 +858,7 @@ router.delete("/cab/:id", async (req, res) => {
   await ride.deleteOne();
   res.json({ message: "Ride deleted" });
 });
+
+
 
 module.exports = router;

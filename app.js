@@ -6,6 +6,7 @@ const cors = require('cors');
 const path = require('path');
 
 require("./utils/cabcleanup"); 
+require("./utils/foundDailyCron");
 
 
 const app = express();

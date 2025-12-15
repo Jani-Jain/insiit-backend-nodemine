@@ -3,7 +3,6 @@ const Schema = mongoose.Schema;
 const uuid = require('uuid');
 
 
-// Define the schema for the mess menu
 const messMenuSchema = new Schema({
     id: {
         type: String,
@@ -38,7 +37,23 @@ const messMenuSchema = new Schema({
     }]
 });
 
-// Create a model for the mess menu schema
 const MessMenu = mongoose.model('MessMenu', messMenuSchema);
 
 module.exports = MessMenu;
+
+//fount item for lost and found
+const mongoose = require("mongoose");
+
+const FoundItemSchema = new mongoose.Schema({
+  place: { type: String, required: true },
+  item: { type: String, required: true },
+  remarks: { type: String, default: "-" },
+});
+
+const FoundItemDaySchema = new mongoose.Schema({
+  date: { type: String, required: true, unique: true }, // YYYY-MM-DD
+  items: [FoundItemSchema],
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("FoundItemDay", FoundItemDaySchema);
