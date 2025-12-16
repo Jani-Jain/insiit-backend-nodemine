@@ -12,6 +12,7 @@ const fcmStore = require('./fcmModel');
 const db = require('./firebaseConfig');
 const router = express.Router();
 const LostFoundItem = require('./lostfoundmodel');
+const FoundItemDay = require("./models/foundItemDay");
 const CabRide = require("./cabsharing");
 
 const checkApiKey = (req, res, next) => {
@@ -727,7 +728,6 @@ router.post("/mess-menu/update-from-excel", checkApiKey, async (req, res) => {
   }
 });
 
-const FoundItemDay = require("./models/foundItemDay");
 
 // Get last 7 days in frontend
 router.get("/found-items", async (req, res) => {
