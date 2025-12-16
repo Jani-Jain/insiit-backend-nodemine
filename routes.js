@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const uuid = require('uuid');
 
-const MessMenu = require('./models');
+const MessMenu = require('./models/messMenu');
 const BusSchedule = require('./busmodel');
 const Event = require('./eventmodel');
 const Outlet = require('./outletmodel');
@@ -589,7 +589,6 @@ router.get('/representatives', async (req, res) => {
 });
 
 //Lost and found 
-//Lost and found 
 router.post('/lostfound', async (req, res) => {
   // #swagger.tags = ['Lost & Found']
   try {
@@ -730,7 +729,7 @@ router.post("/mess-menu/update-from-excel", checkApiKey, async (req, res) => {
 
 const FoundItemDay = require("./models/foundItemDay");
 
-// Get last 7 days for UI
+// Get last 7 days in frontend
 router.get("/found-items", async (req, res) => {
   try {
     const items = await FoundItemDay.find()
@@ -745,11 +744,9 @@ router.get("/found-items", async (req, res) => {
 
 
 /* cabsharing feature */
-const express = require("express");
-
 
 /* GET all visible rides (hide after 30 min) */
-router.get("/", async (req, res) => {
+router.get("/cab", async (req, res) => {
   const now = new Date();
   const visibleAfter = new Date(now.getTime() - 30 * 60 * 1000);
 

@@ -1,5 +1,7 @@
+console.log("Cab cleanup cron loaded");
+
 const cron = require("node-cron");
-const CabRide = require("../cabmodel");
+const CabRide = require("../cabsharing");
 
 cron.schedule("0 * * * *", async () => {
   const now = new Date();
