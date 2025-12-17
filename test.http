@@ -1,2 +1,6 @@
-GET http://localhost:3000/api/lostfound
- 
+POST http://localhost:3000/api/found-items/update-from-sheet
+Content-Type: application/json
+
+{
+  "sheetUrl": "https://docs.google.com/spreadsheets/d/1ChxKMxvg90By4w3HtxgvJ4JSWNuK_YbuN_cr0NVqAMs/edit?usp=sharing"
+}

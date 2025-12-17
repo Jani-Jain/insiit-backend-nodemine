@@ -14,6 +14,8 @@ const router = express.Router();
 const LostFoundItem = require('./lostfoundmodel');
 const FoundItemDay = require("./models/foundItemDay");
 const CabRide = require("./cabsharing");
+const { parseFoundSheet } = require("./utils/foundSheetParser");
+
 
 const checkApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
@@ -856,6 +858,30 @@ router.delete("/cab/:id", async (req, res) => {
   res.json({ message: "Ride deleted" });
 });
 
+router.post("/found-items/update-from-sheet", async (req, res) => {
+  try {
+    const { sheetUrl } = req.body;
+    if (!sheetUrl) {
+      return res.status(400).json({ error: "sheetUrl required" });
+    }
+
+    const parsed = await parseFoundSheet(sheetUrl);
+
+    await FoundItemDay.create(parsed);
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+
+    await FoundItemDay.deleteMany({
+      createdAt: { $lt: cutoff },
+    });
+
+    res.json({ message: "Found items updated", date: parsed.date });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update found items" });
+  }
+});
 
 
 module.exports = router;

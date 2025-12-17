@@ -9,7 +9,7 @@ const routes = require("./routes");
 require("./utils/cabcleanup");
 require("./utils/foundDailyCron");
 
-const app = express();   // ✅ app MUST be before app.get
+const app = express();   
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MongoDBAtlas;
 

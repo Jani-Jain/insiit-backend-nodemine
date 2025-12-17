@@ -5,6 +5,7 @@ const os = require("os");
 const path = require("path");
 
 async function parseFoundSheet(sheetUrl) {
+  const today = new Date().toISOString().split("T")[0]; 
   const filePath = path.join(os.tmpdir(), `found_${Date.now()}.xlsx`);
 
   const response = await axios({
@@ -28,7 +29,7 @@ async function parseFoundSheet(sheetUrl) {
   const items = [];
 
   ws.eachRow((row, index) => {
-    if (index === 1) return; // header
+    if (index === 1) return; 
 
     const place = row.getCell(1).text?.trim();
     const item = row.getCell(2).text?.trim();
@@ -39,7 +40,11 @@ async function parseFoundSheet(sheetUrl) {
     }
   });
 
-  return items;
+  return {
+  date: today,
+  items,
+};
+
 }
 
 module.exports = { parseFoundSheet };
