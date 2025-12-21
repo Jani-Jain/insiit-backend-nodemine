@@ -17,9 +17,6 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/health", (req, res) => {
-  res.json({ status: "alive" });
-});
 
 mongoose
   .connect(MONGODB_URI)
